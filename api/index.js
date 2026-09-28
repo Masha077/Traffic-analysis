@@ -71818,8 +71818,15 @@ if (process.env.CLERK_SECRET_KEY) {
   });
 }
 app.use("/api", routes_default);
-var frontendDist = path2.resolve(process.cwd(), "artifacts/traffic-flow-analysis/dist/public");
-if (fs2.existsSync(frontendDist)) {
+var candidateDirs = [
+  path2.resolve(process.cwd(), "artifacts/traffic-flow-analysis/dist/public"),
+  path2.resolve(import.meta.dirname, "../../traffic-flow-analysis/dist/public"),
+  import.meta.dirname,
+  path2.resolve(process.cwd(), "dist/public"),
+  path2.resolve(process.cwd(), "public")
+];
+var frontendDist = candidateDirs.find((d) => fs2.existsSync(path2.join(d, "index.html")));
+if (frontendDist) {
   app.use(import_express6.default.static(frontendDist));
   app.use((req, res, next) => {
     if (req.method === "GET" && !req.path.startsWith("/api")) {

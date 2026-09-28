@@ -58,8 +58,15 @@ import path from "path";
 
 app.use("/api", router);
 
-const frontendDist = path.resolve(process.cwd(), "artifacts/traffic-flow-analysis/dist/public");
-if (fs.existsSync(frontendDist)) {
+const candidateDirs = [
+  path.resolve(process.cwd(), "artifacts/traffic-flow-analysis/dist/public"),
+  path.resolve(import.meta.dirname, "../../traffic-flow-analysis/dist/public"),
+  import.meta.dirname,
+  path.resolve(process.cwd(), "dist/public"),
+  path.resolve(process.cwd(), "public"),
+];
+const frontendDist = candidateDirs.find((d) => fs.existsSync(path.join(d, "index.html")));
+if (frontendDist) {
   app.use(express.static(frontendDist));
   app.use((req, res, next) => {
     if (req.method === "GET" && !req.path.startsWith("/api")) {
