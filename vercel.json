@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "buildCommand": "pnpm run build",
+  "framework": "vite",
+  "buildCommand": "pnpm --filter @workspace/traffic-flow-analysis run build && pnpm --filter @workspace/api-server run build",
   "outputDirectory": "artifacts/traffic-flow-analysis/dist/public",
   "rewrites": [
     {

@@ -5,6 +5,7 @@ import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
 import { rm } from "node:fs/promises";
 import fs from "node:fs";
+import { execSync } from "node:child_process";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -165,17 +166,32 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     },
   });
 
-  // Copy entrypoints for Vercel / serverless loaders
+  // Ensure frontend is built and copy entrypoints for Vercel / serverless loaders
   const publicDist = path.resolve(artifactDir, "../traffic-flow-analysis/dist/public");
-  if (fs.existsSync(publicDist)) {
-    const apiDist = path.resolve(artifactDir, "../../api");
-    if (fs.existsSync(apiDist)) {
-      for (const file of fs.readdirSync(apiDist)) {
+  if (!fs.existsSync(publicDist) || !fs.existsSync(path.join(publicDist, "index.html"))) {
+    try {
+      execSync("pnpm --filter @workspace/traffic-flow-analysis run build", {
+        cwd: path.resolve(artifactDir, "../.."),
+        stdio: "inherit"
+      });
+    } catch (e) {
+      console.warn("Frontend build warning:", e.message);
+    }
+  }
+  if (!fs.existsSync(publicDist)) {
+    fs.mkdirSync(publicDist, { recursive: true });
+  }
+  const apiDist = path.resolve(artifactDir, "../../api");
+  if (fs.existsSync(apiDist)) {
+    for (const file of fs.readdirSync(apiDist)) {
+      try {
         fs.copyFileSync(path.join(apiDist, file), path.join(publicDist, file));
-      }
+      } catch {}
+    }
+    try {
       fs.copyFileSync(path.join(apiDist, "index.js"), path.join(publicDist, "server.js"));
       fs.copyFileSync(path.join(apiDist, "index.js"), path.join(publicDist, "app.js"));
-    }
+    } catch {}
   }
 }
 
