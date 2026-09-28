@@ -53,10 +53,25 @@ if (process.env.CLERK_SECRET_KEY) {
   });
 }
 
+import fs from "fs";
+import path from "path";
+
 app.use("/api", router);
 
-app.get("/", (_req, res) => {
-  res.redirect("http://localhost:3000");
-});
+const frontendDist = path.resolve(process.cwd(), "artifacts/traffic-flow-analysis/dist/public");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      return res.sendFile(path.join(frontendDist, "index.html"));
+    }
+    next();
+  });
+} else {
+  app.get("/", (_req, res) => {
+    res.redirect("http://localhost:3000");
+  });
+}
 
 export default app;
+
