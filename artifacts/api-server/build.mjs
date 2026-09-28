@@ -193,6 +193,15 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
       fs.copyFileSync(path.join(apiDist, "index.js"), path.join(publicDist, "app.js"));
     } catch {}
   }
+
+  // Also populate root public and dist directories so Vercel finds the output directory regardless of dashboard settings
+  const rootPublic = path.resolve(artifactDir, "../../public");
+  fs.mkdirSync(rootPublic, { recursive: true });
+  fs.cpSync(publicDist, rootPublic, { recursive: true });
+
+  const rootDist = path.resolve(artifactDir, "../../dist");
+  fs.mkdirSync(rootDist, { recursive: true });
+  fs.cpSync(publicDist, rootDist, { recursive: true });
 }
 
 buildAll().catch((err) => {
