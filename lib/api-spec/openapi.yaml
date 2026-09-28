@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Traffic Flow Analysis API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: datasets
+    description: Dataset upload, profiling, and demo data
+  - name: models
+    description: Model training and evaluation
+  - name: predictions
+    description: Traffic condition predictions
+  - name: analysis
+    description: Dashboard analysis summaries
+  - name: rag
+    description: Retrieval-grounded traffic explanations
 paths:
   /healthz:
     get:
@@ -24,7 +34,170 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dataset/upload:
+    post:
+      operationId: uploadDataset
+      tags: [datasets]
+      summary: Upload and profile a traffic dataset
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DatasetUploadInput"
+      responses:
+        "200":
+          description: Dataset profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetProfile"
+        "400":
+          description: Invalid dataset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dataset/demo:
+    post:
+      operationId: loadDemoDataset
+      tags: [datasets]
+      summary: Load the built-in demonstration dataset
+      responses:
+        "200":
+          description: Demo dataset profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetProfile"
+  /model/train:
+    post:
+      operationId: trainModels
+      tags: [models]
+      summary: Train and compare multiple traffic classifiers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainModelsInput"
+      responses:
+        "200":
+          description: Training results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingResults"
+        "400":
+          description: Training validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /model/results:
+    get:
+      operationId: getModelResults
+      tags: [models]
+      summary: Get the latest model comparison
+      parameters:
+        - $ref: "#/components/parameters/DatasetId"
+      responses:
+        "200":
+          description: Latest training results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingResults"
+        "404":
+          description: No training run found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /predict:
+    post:
+      operationId: predictTraffic
+      tags: [predictions]
+      summary: Predict a traffic condition for feature values
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PredictionInput"
+      responses:
+        "200":
+          description: Traffic prediction with model-derived explanation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionResult"
+        "400":
+          description: Prediction validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /analysis/summary:
+    get:
+      operationId: getAnalysisSummary
+      tags: [analysis]
+      summary: Get the current dashboard analysis summary
+      parameters:
+        - $ref: "#/components/parameters/DatasetId"
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisSummary"
+        "404":
+          description: Dataset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /rag/query:
+    post:
+      operationId: queryRag
+      tags: [rag]
+      summary: Retrieve traffic knowledge and generate a grounded answer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagQueryInput"
+      responses:
+        "200":
+          description: Grounded traffic answer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RagQueryResult"
+  /rag/sources:
+    get:
+      operationId: getRagSources
+      tags: [rag]
+      summary: List traffic knowledge-base sources
+      responses:
+        "200":
+          description: Knowledge sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RagSource"
 components:
+  parameters:
+    DatasetId:
+      name: datasetId
+      in: query
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +206,252 @@ components:
           type: string
       required:
         - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: ["string", "null"]
+      required: [error]
+    DatasetUploadInput:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required: [file]
+    DatasetProfile:
+      type: object
+      properties:
+        datasetId:
+          type: string
+        name:
+          type: string
+        isDemo:
+          type: boolean
+        rows:
+          type: integer
+        columns:
+          type: integer
+        columnNames:
+          type: array
+          items:
+            type: string
+        dataTypes:
+          type: object
+          additionalProperties:
+            type: string
+        missingValues:
+          type: integer
+        duplicateRows:
+          type: integer
+        numericalFeatures:
+          type: array
+          items:
+            type: string
+        categoricalFeatures:
+          type: array
+          items:
+            type: string
+        possibleTarget:
+          type: ["string", "null"]
+        targetCandidates:
+          type: array
+          items:
+            type: string
+        trafficColumns:
+          type: array
+          items:
+            type: string
+        classDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+        preview:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required:
+        - datasetId
+        - name
+        - isDemo
+        - rows
+        - columns
+        - columnNames
+        - dataTypes
+        - missingValues
+        - duplicateRows
+        - numericalFeatures
+        - categoricalFeatures
+        - targetCandidates
+        - trafficColumns
+        - classDistribution
+        - preview
+    TrainModelsInput:
+      type: object
+      properties:
+        datasetId:
+          type: string
+        targetColumn:
+          type: string
+        testSize:
+          type: number
+          minimum: 0.1
+          maximum: 0.4
+          default: 0.2
+      required: [datasetId, targetColumn]
+    ModelMetric:
+      type: object
+      properties:
+        name:
+          type: string
+        accuracy:
+          type: number
+        precision:
+          type: number
+        recall:
+          type: number
+        f1:
+          type: number
+        trainingTimeMs:
+          type: number
+      required: [name, accuracy, precision, recall, f1, trainingTimeMs]
+    ConfusionMatrix:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        values:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+      required: [labels, values]
+    FeatureImportance:
+      type: object
+      properties:
+        feature:
+          type: string
+        importance:
+          type: number
+        direction:
+          type: string
+      required: [feature, importance, direction]
+    TrainingResults:
+      type: object
+      properties:
+        datasetId:
+          type: string
+        targetColumn:
+          type: string
+        bestModel:
+          type: string
+        trainedAt:
+          type: string
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelMetric"
+        confusionMatrix:
+          $ref: "#/components/schemas/ConfusionMatrix"
+        featureImportance:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureImportance"
+        classDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+      required: [datasetId, targetColumn, bestModel, trainedAt, metrics, confusionMatrix, featureImportance, classDistribution]
+    PredictionInput:
+      type: object
+      properties:
+        datasetId:
+          type: string
+        features:
+          type: object
+          additionalProperties: true
+      required: [datasetId, features]
+    PredictionResult:
+      type: object
+      properties:
+        datasetId:
+          type: string
+        condition:
+          type: string
+        confidence:
+          type: number
+        model:
+          type: string
+        factors:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureImportance"
+        inputSummary:
+          type: object
+          additionalProperties:
+            type: ["string", "number", "boolean", "null"]
+      required: [datasetId, condition, confidence, model, factors, inputSummary]
+    AnalysisSummary:
+      type: object
+      properties:
+        profile:
+          $ref: "#/components/schemas/DatasetProfile"
+        training:
+          anyOf:
+            - $ref: "#/components/schemas/TrainingResults"
+            - type: "null"
+        latestPrediction:
+          anyOf:
+            - $ref: "#/components/schemas/PredictionResult"
+            - type: "null"
+      required: [profile, training, latestPrediction]
+    RagQueryInput:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+        datasetId:
+          type: ["string", "null"]
+        prediction:
+          anyOf:
+            - $ref: "#/components/schemas/PredictionResult"
+            - type: "null"
+      required: [question]
+    RagSource:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        topic:
+          type: string
+        excerpt:
+          type: string
+      required: [id, title, topic, excerpt]
+    RagQueryResult:
+      type: object
+      properties:
+        answer:
+          type: string
+        retrievedFacts:
+          type: array
+          items:
+            type: string
+        modelContext:
+          type: array
+          items:
+            type: string
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/RagSource"
+      required: [answer, retrievedFacts, modelContext, sources]
 

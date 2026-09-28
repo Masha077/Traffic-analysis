@@ -1,6 +1,6 @@
-# [Project name]
+# Traffic Flow Analysis
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An academic traffic analytics workspace that profiles uploaded datasets, compares classification models, predicts traffic conditions, and explains results with retrieved traffic knowledge.
 
 ## Run & Operate
 
@@ -22,15 +22,22 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — source of truth for dataset, model, prediction, analysis, and RAG contracts.
+- `artifacts/api-server/src/lib/traffic-analysis.ts` — dataset parsing, profiling, demo data, model evaluation, prediction, and local knowledge retrieval.
+- `artifacts/api-server/src/routes/traffic.ts` — REST routes under `/api`.
+- `artifacts/traffic-flow-analysis/src/App.tsx` — responsive analysis workspace UI.
+- `artifacts/traffic-flow-analysis/src/index.css` — visual theme, grid texture, and motion primitives.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first build keeps dataset and training state in process memory so the demo path works without database setup; the API contract is ready for persistence later.
+- ML classification is separate from RAG: model evaluation and prediction are produced by the analysis pipeline, while RAG retrieves traffic references and adds context.
+- Upload parsing supports CSV natively and standard XLSX worksheet XML through the system unzip utility, avoiding a runtime package dependency for ingestion.
+- The built-in demo dataset exercises profiling, model comparison, prediction, and grounded insights without an upload.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Users can load a demo or upload CSV/XLSX traffic data, inspect schema and quality signals, select a target, compare five classifiers, review feature-associated signals and a confusion matrix, make a prediction, and ask grounded traffic questions.
 
 ## User preferences
 
@@ -38,7 +45,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Train after loading a dataset and selecting a target column; predictions require a completed training run.
+- Generated API clients live in `lib/api-client-react` and must be regenerated after OpenAPI changes.
 
 ## Pointers
 

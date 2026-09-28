@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Traffic Flow Analysis"
+description = "A full-stack academic traffic analytics workspace that profiles uploaded CSV and Excel datasets, trains multiple classification models, predicts traffic conditions, and explains results with retrieval-grounded insights."
+version = "1.0.0"
+id = "artifacts/traffic-flow-analysis"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24126
+
+[services.development]
+run = "pnpm --filter @workspace/traffic-flow-analysis run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/traffic-flow-analysis", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/traffic-flow-analysis/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24126"
+BASE_PATH = "/"
